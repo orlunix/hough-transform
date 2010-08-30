@@ -17,7 +17,11 @@
 
 //hough transform include
 #include "bmpread.h"
-#include "hough_transform.h"
+#include "ht_main.h"
 #include "edge_detection.h"
+#include "hough_transform.h"
+
+//compilation switch
+#define PRINT_HT_PARAMETER
 
 #endif

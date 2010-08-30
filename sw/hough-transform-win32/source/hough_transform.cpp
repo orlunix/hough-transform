@@ -4,94 +4,169 @@
 //	Website	:	http://www.cnblogs.com/lunix
 //==================================================================================================
 //	File		:	hough_transform.cpp
-//	
 //**************************************************************************************************
-
 #include "includes.h"
-	
-int main(int argc,char* argv[]){
-	BITMAPFILEHEADER filehead;
-	BITMAPINFOHEADER infohead;
+//Greek letter 
+//rho
+//theta
+//pi
 
-	FILE * fpr;
-	FILE * fpw;
-//	unsigned int xsize;
-	unsigned int i;
-	unsigned int j;
-	unsigned int k;
-//	long lhistogram[256];
+#define pi 3.1415926535
 
-	unsigned char zero=0;
-	
-	char readfile[20];
-	char writefile[20];
-	
-	if (argc <= 1){
-		strcpy(readfile,"readfile.bmp");
-		strcpy(writefile,"writefile.bmp");
-	}else if (argc == 2){
-		strcpy(readfile,argv[1]);
-		strcpy(writefile,"writefile");
-	}else if (argc >= 3){
-		strcpy(readfile,argv[1]);
-		strcpy(writefile,argv[2]);
+//****************************** Draw a line on a picture ******************************************
+//This function is designed by me. ^_^
+void SetPixel(unsigned char * image, int x, int y, unsigned char color){
+	if(x > 0 && x < IMAGE_WIDTH && y > 0 && y < IMAGE_HEIGHT)
+	*(image + y*IMAGE_WIDTH + x) = color;
+};
+//****************************** Draw a line on a picture ******************************************
+//The only function copied from the net.
+void LineDDA(int x0,int y0,int x1,int y1,int color,unsigned char * hdc){
+	float dy,dx,x,y,m;
+	dx=(float)(x1-x0);
+	dy=(float)(y1-y0);
+	m=dy/dx;
+	if(x0<x1){
+		if(m<=1&&m>=-1){
+			y=y0;
+			for(x=x0;x<=x1;x++){
+				SetPixel(hdc,x,int(y+0.5),color);
+				y+=m;
+			}
+		}
 	}
-	 
-	//test
-	printf("%s,%s\n",readfile,writefile);
-
-	/*open file in binary format!*/
-	if(!(fpr=fopen(readfile,"rb"))){
-		printf("%s\n",readfile);
-		printf("read file open error!!!\n");
-		exit(0);
+	if(x0>x1){
+		if(m<=1&&m>=-1){
+			y=y0;
+			for(x=x0;x>=x1;x--){
+				SetPixel(hdc,x,int(y+0.5),color);
+				y-=m;
+			}
+		}
 	}
-	if(!(fpw=fopen(writefile,"wb"))){
-		printf("%s\n",writefile);
-		printf("write file open error!!!\n");
-		exit(0);
+	if(y0<y1){
+		if(m>=1||m<=-1){
+			m=1/m;
+			x=x0;
+			for(y=y0;y<=y1;y++){
+				SetPixel(hdc,int(x+0.5),y,color);
+				x+=m;
+			}
+		}
 	}
-	
-	
-	unsigned char * image = (unsigned char *)malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(unsigned char));
-	//****************read image infomation and matrix from read file*********************************
-	fread(&filehead,sizeof(BITMAPFILEHEADER),1,fpr);
-	fread(&infohead,sizeof(BITMAPINFOHEADER),1,fpr);
-	
-	if(infohead.biWidth != 640 || infohead.biHeight != 480 || infohead.biBitCount != 8){
-		printf("Image Format is not supported! Please make sure:\n");
-		printf("Width		:	640\n");//how to print "define"ed number?fg,IMAGE_WIDTH
-		printf("Height		:	480\n");
-		printf("BitCount	:	8\n");
-		exit(0);
+	if(y0>y1){
+		if(m<=-1||m>=1){
+			m=1/m;
+			x=x0;
+			for(y=y0;y>=y1;y--){
+				SetPixel(hdc,int(x+0.5),y,color);
+				x-=m;
+			}
+		}
 	}
-	
-	fseek(fpr,filehead.bfOffBits,0);
-	
-	// how to detect the size of image ?
-	fread(image,sizeof(unsigned char),IMAGE_WIDTH*IMAGE_HEIGHT,fpr); // only 640*480 is valid
-	//************************************* edge detection *******************************************
-	edge_detection(image, 640, 480);
-	
-	//****************write image infomation and matrix from read file********************************
-	//write file header info
-	fwrite(&filehead,sizeof(filehead),1,fpw);
-	fwrite(&infohead,sizeof(infohead),1,fpw);
-	//write indexed color
-	for(i=0;i<256;i++){
-		putc(i, fpw);
-		putc(i, fpw);
-		putc(i, fpw);
-		putc(0, fpw);
-	}
-	
-	fseek(fpw,filehead.bfOffBits,0);
-	//write matrix data
-	fwrite(image,sizeof(unsigned char),IMAGE_WIDTH*IMAGE_HEIGHT,fpw);
-	
-	//*************************************** end ****************************************************
-	fclose(fpr);
-	fclose(fpw);
-	free(image);
-	return 0;
 }
+//******************************Hough transform function *******************************************
+void hough_transform(unsigned char * image){
+	signed double rho;
+	//The compiler told me that:"'signed' : can not be used with type 'double'", but I found I if I 
+	//don't add "signed" before double the function "LineDDA" will be hanged up. I don't know why.
+	int rho_max;
+	double rho_step;
+	double theta;
+	double theta_step;
+	
+	int x,y;
+	
+	int rho_y;
+	int theta_x;
+	
+	unsigned int * vote_matrix;
+	
+//******************************calculate the vote value *******************************************
+	rho_max = (int)sqrt(IMAGE_WIDTH*IMAGE_WIDTH + IMAGE_HEIGHT*IMAGE_HEIGHT);
+	rho_step = 2.0*rho_max/(double)IMAGE_HEIGHT ;//implicit conversion
+	theta_step = pi/IMAGE_WIDTH;
+
+	vote_matrix = (unsigned int *)malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(unsigned int));
+	
+	for(rho_y = 0; rho_y < IMAGE_HEIGHT; rho_y++){
+		for(theta_x = 0; theta_x < IMAGE_WIDTH; theta_x++){
+			*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 0;
+		}
+	}
+	
+	for(y = 0; y < IMAGE_HEIGHT; y++){
+		for(x = 0; x < IMAGE_WIDTH; x++){
+			if(*(image + y*IMAGE_WIDTH + x) > 200){
+				for(theta = 0.0;theta < pi; theta += theta_step){
+					rho = (x*cos(theta)) + (y*sin(theta));
+					rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
+					theta_x = (int)(theta/theta_step + 0.5);
+					*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 
+							*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) + 1;
+					// should define a variable 
+					//vote_line_offset = vote_matrix + rho_y*IMAGE_WIDTH
+				}
+			}
+		}
+	}
+//******************************Find the maximum value point ***************************************
+	struct Maxpoint{
+		unsigned int value;
+		unsigned int column;
+		unsigned int row;
+	}maxpoint={0,0,0};
+
+	for(rho_y = 0; rho_y < IMAGE_HEIGHT; rho_y++){
+		for(theta_x = 0; theta_x < IMAGE_WIDTH; theta_x++){
+				if(maxpoint.value < *(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x)){
+						maxpoint.value = *(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x);
+						maxpoint.column = theta_x;   
+						maxpoint.row = rho_y;
+				}
+			//*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 0;
+		}
+	}
+	
+	theta=theta_step * maxpoint.column;
+//Actually, when computing vote value maxpoint can be found
+//****************************************** data test *********************************************
+#ifdef PRINT_HT_PARAMETER
+	printf("hough-transform:theta == %f\n",theta);
+	printf("max value==%d\n",maxpoint.value);
+	printf("maxpoint.column==%d\n",maxpoint.column);
+	printf("maxpoint.row==%d\n",maxpoint.row);
+	printf("theta_step == %f ",theta_step);
+	printf("rho_step == %f ",rho_step);
+	printf("rho_max == %d \n",rho_max);
+#endif
+
+//************************ Test show the vote matrix data in a image********************************
+//	for(y=0; y < IMAGE_HEIGHT; y++){
+//		for(x=0; x < IMAGE_WIDTH; x++){
+//			*(image + y*IMAGE_WIDTH + x)=*(vote_matrix + y*IMAGE_WIDTH +x);
+//		}
+//	}	
+	
+	rho = rho_step*(maxpoint.row - (IMAGE_HEIGHT/2));
+	
+	int x0,y0,x1,y1;
+	x0 = 0;
+	y0 = (int)(rho/sin(theta));
+	//y0 = (y0 < 0) ? 0 : ((y0 >= IMAGE_HEIGHT) ? (IMAGE_HEIGHT - 1) : y0);
+	
+	//x0 = (int)(rho - y0*sin(theta))/cos(theta);
+	
+	x1 = IMAGE_WIDTH - 1;
+	y1 = (int)(((rho - ((IMAGE_WIDTH - 1) * cos(theta)))/sin(theta)));
+	//y1 = (y1 < 0) ? 0 : ((y1 >= IMAGE_HEIGHT) ? (IMAGE_HEIGHT - 1) : y1);
+	
+	//x1 = (int)((rho - y1*sin(theta))/cos(theta));
+	
+	LineDDA(x0,y0,x1,y1,0xFF,image);
+	//LineDDA(0,0,480,480,0xFF,image);
+	
+	free(vote_matrix);
+
+}
+

@@ -38,6 +38,7 @@ unsigned char edge_pixels_cal(int x,int y,int size,unsigned char *image){
 	unsigned char matrix_data[9];
 	double SumX,SumY;
 	
+	unsigned int pixel_data_tmp;
 	unsigned char edge_pixel_data;
 	
 	int pos_x,pos_y;//to avoid index less than zero
@@ -61,12 +62,13 @@ unsigned char edge_pixels_cal(int x,int y,int size,unsigned char *image){
 	SumX = multi_mask(matrix_data,TH,3);
 	SumY = multi_mask(matrix_data,TV,3);
 	
-	SumX = (SumX > 255.0)?255.0:((SumX < 0.0)?0:SumX);
-	SumY = (SumY > 255.0)?255.0:((SumY < 0.0)?0:SumY);
+	//SumX = (SumX > 255.0)?255.0:((SumX < 0.0)?0:SumX);
+	//SumY = (SumY > 255.0)?255.0:((SumY < 0.0)?0:SumY);
 	
-	edge_pixel_data = (unsigned char)sqrt(SumX*SumX + SumY*SumY);
+	pixel_data_tmp = (unsigned int)sqrt(SumX*SumX + SumY*SumY);
 	
-	
+	edge_pixel_data = (pixel_data_tmp > 255)?255:((pixel_data_tmp < 0)?0:pixel_data_tmp);
+	//if(pixel_data_tmp!=0){printf("pixel_data_tmp==%d\n",pixel_data_tmp);getchar();}
 	return edge_pixel_data;
 }
 
