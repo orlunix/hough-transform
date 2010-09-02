@@ -23,5 +23,6 @@
 
 //compilation switch
 #define PRINT_HT_PARAMETER
+//#define _GRADIENT_
 
 #endif

@@ -94,10 +94,72 @@ void hough_transform(unsigned char * image){
 			*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 0;
 		}
 	}
-	
+	#ifdef _GRADIENT_
+	double gradient_theta = 0.0 ;
+	double * p_gt = &gradient_theta;
+	double theta_ga;//gradient theta absolute
+	double deviation_angle = 89.0*pi/180.0;
+	double min_angle, max_angle;
 	for(y = 0; y < IMAGE_HEIGHT; y++){
 		for(x = 0; x < IMAGE_WIDTH; x++){
-			if(*(image + y*IMAGE_WIDTH + x) > 200){
+			//if(*(image + y*IMAGE_WIDTH + x) > 200){
+			if(edge_pixels_cal_gradient(x,y,image,p_gt) > 200){
+				//for(theta = 0.0;theta < pi; theta += theta_step){
+				theta_ga = (gradient_theta < 0)?(gradient_theta+pi) : gradient_theta;
+				//printf("theta == %f\n",gradient_theta);getchar();
+				if(theta_ga - deviation_angle < 0){
+						min_angle = 0.0;  max_angle = theta_ga+deviation_angle;
+						for(theta = min_angle; theta < max_angle; theta += theta_step){
+							rho = (x*cos(theta)) + (y*sin(theta));
+							rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
+							theta_x = (int)(theta/theta_step + 0.5);
+							*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 
+									*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) + 1;
+						}
+						min_angle = pi+theta_ga-deviation_angle ;  max_angle = pi;
+						for(theta = min_angle; theta < max_angle; theta += theta_step){
+							rho = (x*cos(theta)) + (y*sin(theta));
+							rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
+							theta_x = (int)(theta/theta_step + 0.5);
+							*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 
+									*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) + 1;
+						}
+				}else if(theta_ga - deviation_angle >= pi) {
+						min_angle = theta_ga-deviation_angle;  max_angle = pi;
+						for(theta = min_angle; theta < max_angle; theta += theta_step){
+							rho = (x*cos(theta)) + (y*sin(theta));
+							rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
+							theta_x = (int)(theta/theta_step + 0.5);
+							*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 
+									*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) + 1;
+						}
+						min_angle = 0.0 ;  max_angle = theta_ga+deviation_angle-pi;
+						for(theta = min_angle; theta < max_angle; theta += theta_step){
+							rho = (x*cos(theta)) + (y*sin(theta));
+							rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
+							theta_x = (int)(theta/theta_step + 0.5);
+							*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 
+									*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) + 1;
+						}
+				}else {
+						min_angle = theta_ga-deviation_angle;  max_angle = theta_ga+deviation_angle;
+						for(theta = min_angle; theta < max_angle; theta += theta_step){
+							rho = (x*cos(theta)) + (y*sin(theta));
+							rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
+							theta_x = (int)(theta/theta_step + 0.5);
+							*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 
+									*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) + 1;
+						}
+				}
+			
+			}
+		}
+	}
+	#else
+	for(y = 0; y < IMAGE_HEIGHT; y++){
+		for(x = 0; x < IMAGE_WIDTH; x++){
+			//if(*(image + y*IMAGE_WIDTH + x) > 200){
+			if(edge_pixels_cal(x,y,image) > 200){
 				for(theta = 0.0;theta < pi; theta += theta_step){
 					rho = (x*cos(theta)) + (y*sin(theta));
 					rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
@@ -110,6 +172,7 @@ void hough_transform(unsigned char * image){
 			}
 		}
 	}
+	#endif
 //******************************Find the maximum value point ***************************************
 	struct Maxpoint{
 		unsigned int value;
@@ -148,7 +211,7 @@ void hough_transform(unsigned char * image){
 //		}
 //	}	
 	
-	rho = rho_step*(maxpoint.row - (IMAGE_HEIGHT/2));
+	rho = (int)rho_step*(maxpoint.row - (IMAGE_HEIGHT/2));
 	
 	int x0,y0,x1,y1;
 	x0 = 0;
@@ -163,7 +226,7 @@ void hough_transform(unsigned char * image){
 	
 	//x1 = (int)((rho - y1*sin(theta))/cos(theta));
 	
-	LineDDA(x0,y0,x1,y1,0xFF,image);
+	LineDDA(x0,y0,x1,y1,0x00,image);
 	//LineDDA(0,0,480,480,0xFF,image);
 	
 	free(vote_matrix);
