@@ -74,8 +74,6 @@ double TV_9x9[] = {  -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
                      -5.0, -4.0, -3.0, -2.0, 0.0, 2.0, 3.0, 4.0, 5.0,
                      -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0  };
 
-	int maskSize = 9;
-
 double multi_mask(unsigned char * matrix_data, double * mask, int size){
 	int i;
 	int longth = size*size;
@@ -100,7 +98,7 @@ unsigned char edge_pixels_cal(int x, int y, unsigned char *image){
 	unsigned int pixel_data_tmp;
 	unsigned char edge_pixel_data;
 	
-	int size = maskSize;
+	int size = MASKSIZE;
 	
 	int pos_x,pos_y;//to avoid index less than zero
 	
@@ -168,7 +166,7 @@ unsigned char edge_pixels_cal_gradient(int x,int y, unsigned char *image, double
 	unsigned int pixel_data_tmp;
 	unsigned char edge_pixel_data;
 	
-	int size = maskSize;
+	int size = MASKSIZE;
 	
 	int pos_x,pos_y;//to avoid index less than zero
 	

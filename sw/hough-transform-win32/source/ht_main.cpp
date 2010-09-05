@@ -80,10 +80,19 @@ int main(int argc,char* argv[]){
 	//LineDDA(0,0,480,480,0x00,image);
 	//************************************* edge detection *******************************************
 	//edge_detection(image, 640, 480);
-	
+
+#ifdef _TIME_MEASURE_
+	StartCounter();
+#endif
 
 	//************************************* hough transform ******************************************
 	hough_transform(image);	
+
+#ifdef _TIME_MEASURE_
+	double T = GetCounter();
+	printf("Time consume == %10.30f\n",T);
+#endif
+
 	//****************write image infomation and matrix from read file********************************
 	//write file header info
 	fwrite(&filehead,sizeof(filehead),1,fpw);

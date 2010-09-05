@@ -98,7 +98,7 @@ void hough_transform(unsigned char * image){
 	double gradient_theta = 0.0 ;
 	double * p_gt = &gradient_theta;
 	double theta_ga;//gradient theta absolute
-	double deviation_angle = 89.0*pi/180.0;
+	double deviation_angle = DEVIATION_ANGLE*pi/180.0;
 	double min_angle, max_angle;
 	for(y = 0; y < IMAGE_HEIGHT; y++){
 		for(x = 0; x < IMAGE_WIDTH; x++){
@@ -107,7 +107,15 @@ void hough_transform(unsigned char * image){
 				//for(theta = 0.0;theta < pi; theta += theta_step){
 				theta_ga = (gradient_theta < 0)?(gradient_theta+pi) : gradient_theta;
 				//printf("theta == %f\n",gradient_theta);getchar();
-				if(theta_ga - deviation_angle < 0){
+				if(0.0 == deviation_angle){
+					theta = theta_ga;
+					rho = (x*cos(theta)) + (y*sin(theta));
+					rho_y = (int)(rho/rho_step + IMAGE_HEIGHT/2 + 0.5);
+					theta_x = (int)(theta/theta_step + 0.5);
+					*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) = 
+						*(vote_matrix +  rho_y*IMAGE_WIDTH + theta_x) + 1;
+				}
+				else if(theta_ga - deviation_angle < 0){
 						min_angle = 0.0;  max_angle = theta_ga+deviation_angle;
 						for(theta = min_angle; theta < max_angle; theta += theta_step){
 							rho = (x*cos(theta)) + (y*sin(theta));

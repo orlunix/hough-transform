@@ -20,9 +20,14 @@
 #include "ht_main.h"
 #include "edge_detection.h"
 #include "hough_transform.h"
+#include "timestamp.h"
 
 //compilation switch
 #define PRINT_HT_PARAMETER
-//#define _GRADIENT_
+#define _GRADIENT_
+#define _TIME_MEASURE_
+#define _WINDOWS_
+#define MASKSIZE 3
+#define DEVIATION_ANGLE 0.0
 
 #endif
